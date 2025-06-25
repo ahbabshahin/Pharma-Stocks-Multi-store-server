@@ -11,6 +11,7 @@ const schema = buildSchema(`
 
   type Business {
     id: ID!
+    bid: Int!
     name: String!
     address: String
     phone: String
@@ -63,6 +64,15 @@ const schema = buildSchema(`
     createdAt: String!
   }
 
+  type ActivityLog {
+    id: ID!
+    user: User!
+    name: String!
+    action: String!
+    when: String!
+    description: String!
+  }
+
   type AuthPayload {
     token: String!
     user: User!
@@ -78,19 +88,30 @@ const schema = buildSchema(`
     invoices: [Invoice!]!
     invoice(id: ID!): Invoice
     sales: [Sale!]!
+    sale(id: ID!): Sale
     salesReport(startDate: String!, endDate: String!): [Sale!]!
+    activityLogs: [ActivityLog!]!
     me: User
   }
 
   type Mutation {
     register(username: String!, password: String!, role: String, businessId: ID): AuthPayload!
     login(username: String!, password: String!): AuthPayload!
+    updateUser(id: ID!, username: String, password: String, role: String, businessId: ID): User!
+    deleteUser(id: ID!): Boolean!
     createBusiness(name: String!, address: String, phone: String, type: String!): Business!
     updateBusiness(id: ID!, name: String, address: String, phone: String, type: String): Business!
+    deleteBusiness(id: ID!): Boolean!
     createProduct(name: String!, sku: String!, quantity: Int!, price: Float!): Product!
     updateProduct(id: ID!, name: String, sku: String, quantity: Int, price: Float): Product!
+    deleteProduct(id: ID!): Boolean!
     createCustomer(name: String!, email: String!, phone: String, address: String): Customer!
+    updateCustomer(id: ID!, name: String, email: String, phone: String, address: String): Customer!
+    deleteCustomer(id: ID!): Boolean!
     createInvoice(customerId: ID!, items: [InvoiceItemInput!]!): Invoice!
+    updateInvoice(id: ID!, customerId: ID, items: [InvoiceItemInput!], status: String): Invoice!
+    deleteInvoice(id: ID!): Boolean!
+    deleteSale(id: ID!): Boolean!
   }
 
   input InvoiceItemInput {

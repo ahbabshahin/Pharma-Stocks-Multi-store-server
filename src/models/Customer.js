@@ -9,4 +9,6 @@ const customerSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+customerSchema.index({ email: 1, business: 1 }, { unique: true });
+
 module.exports = mongoose.model('Customer', customerSchema);
