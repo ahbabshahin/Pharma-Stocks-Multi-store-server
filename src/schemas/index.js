@@ -22,9 +22,12 @@ const schema = buildSchema(`
   type Product {
     id: ID!
     name: String!
+    brand: String!
     sku: String!
     quantity: Int!
     price: Float!
+    lowStockAmount: Int!
+    lowStockAlert: Boolean!
     business: Business!
     createdAt: String!
   }
@@ -73,24 +76,63 @@ const schema = buildSchema(`
     description: String!
   }
 
+  type PaginatedBusinesses {
+    items: [Business!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
+
+  type PaginatedProducts {
+    items: [Product!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
+
+  type PaginatedCustomers {
+    items: [Customer!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
+
+  type PaginatedInvoices {
+    items: [Invoice!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
+
+  type PaginatedSales {
+    items: [Sale!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
+
+  type PaginatedActivityLogs {
+    items: [ActivityLog!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
+
   type AuthPayload {
     token: String!
     user: User!
   }
 
   type Query {
-    businesses: [Business!]!
+    businesses(first: Int, offset: Int): PaginatedBusinesses!
     business(id: ID!): Business
-    products: [Product!]!
+    searchBusinesses(searchTerm: String!, first: Int, offset: Int): PaginatedBusinesses!
+    products(first: Int, offset: Int): PaginatedProducts!
     product(id: ID!): Product
-    customers: [Customer!]!
+    searchProducts(searchTerm: String!, businessId: ID, first: Int, offset: Int): PaginatedProducts!
+    lowStockProducts(first: Int, offset: Int): PaginatedProducts!
+    customers(first: Int, offset: Int): PaginatedCustomers!
     customer(id: ID!): Customer
-    invoices: [Invoice!]!
+    invoices(first: Int, offset: Int): PaginatedInvoices!
     invoice(id: ID!): Invoice
-    sales: [Sale!]!
+    sales(first: Int, offset: Int): PaginatedSales!
     sale(id: ID!): Sale
     salesReport(startDate: String!, endDate: String!): [Sale!]!
-    activityLogs: [ActivityLog!]!
+    activityLogs(first: Int, offset: Int): PaginatedActivityLogs!
     me: User
   }
 
@@ -102,8 +144,8 @@ const schema = buildSchema(`
     createBusiness(name: String!, address: String, phone: String, type: String!): Business!
     updateBusiness(id: ID!, name: String, address: String, phone: String, type: String): Business!
     deleteBusiness(id: ID!): Boolean!
-    createProduct(name: String!, sku: String!, quantity: Int!, price: Float!): Product!
-    updateProduct(id: ID!, name: String, sku: String, quantity: Int, price: Float): Product!
+    createProduct(name: String!, brand: String!, sku: String!, quantity: Int!, price: Float!, lowStockAmount: Int): Product!
+    updateProduct(id: ID!, name: String, brand: String, sku: String, quantity: Int, price: Float, lowStockAmount: Int): Product!
     deleteProduct(id: ID!): Boolean!
     createCustomer(name: String!, email: String!, phone: String, address: String): Customer!
     updateCustomer(id: ID!, name: String, email: String, phone: String, address: String): Customer!
