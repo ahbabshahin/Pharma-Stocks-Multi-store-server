@@ -10,5 +10,6 @@ const customerSchema = new mongoose.Schema({
 });
 
 customerSchema.index({ email: 1, business: 1 }, { unique: true });
-
-module.exports = mongoose.model('Customer', customerSchema);
+module.exports =
+	mongoose.models.Customer || mongoose.model('Customer', customerSchema);
+// module.exports = mongoose.model('Customer', customerSchema);
