@@ -13,4 +13,7 @@ const invoiceSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Invoice', invoiceSchema);
+module.exports =
+	mongoose.models.Invoice || mongoose.model('Invoice', invoiceSchema);
+
+// module.exports = mongoose.model('Invoice', invoiceSchema);
