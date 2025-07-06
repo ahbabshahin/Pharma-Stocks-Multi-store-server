@@ -1,53 +1,160 @@
-require('dotenv').config();
-const express = require('express');
-const { graphqlHTTP } = require('express-graphql');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const connectDB = require('./src/config/db');
-const schema = require('./src/schemas');
-const resolvers = require('./src/resolvers');
-const authMiddleware = require('./src/middleware/auth');
+import { config } from 'dotenv';
+config();
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import connectDB from './src/config/db.js';
+import typeDefs from './src/schemas/index.js';
+import resolvers from './src/resolvers/index.js';
+import { ApolloServer } from '@apollo/server';
+import { startStandaloneServer } from '@apollo/server/standalone';
+import jwt from 'jsonwebtoken';
+import User from './src/models/User.js';
 
 const app = express();
 
 // Connect to MongoDB
 connectDB();
 
-// Middleware
-app.use(cors());
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      connectSrc: ["'self'", "http://localhost:5000"],
-      imgSrc: ["'self'", "data:"],
-      fontSrc: ["'self'"]
-    }
-  }
-}));
+// Middleware for non-GraphQL routes
+app.use(
+	cors({
+		origin: ['http://localhost:3000', 'http://localhost:5000'],
+		methods: ['POST', 'GET'],
+		allowedHeaders: [
+			'Content-Type',
+			'Authorization',
+			'x-apollo-operation-name',
+			'apollo-require-preflight',
+		],
+	})
+);
+app.use(
+	helmet({
+		contentSecurityPolicy: {
+			directives: {
+				defaultSrc: ["'self'"],
+				styleSrc: ["'self'", "'unsafe-inline'"],
+				scriptSrc: ["'self'", "'unsafe-inline'"],
+				connectSrc: [
+					"'self'",
+					'http://localhost:5000',
+					'http://localhost:3000',
+				],
+				imgSrc: ["'self'", 'data:'],
+				fontSrc: ["'self'"],
+			},
+		},
+	})
+);
 app.use(express.json());
 
-// Rate limiting for GraphQL endpoint
-const graphqlLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again after 15 minutes',
-  standardHeaders: true,
-  legacyHeaders: false
+// Rate limiting for non-GraphQL routes
+const rateLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	max: 100,
+	message:
+		'Too many requests from this IP, please try again after 15 minutes',
+	standardHeaders: true,
+	legacyHeaders: false,
+});
+app.use(rateLimiter);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+	res.status(200).json({ status: 'OK' });
 });
 
-app.use('/graphql', graphqlLimiter, authMiddleware, graphqlHTTP((req) => ({
-  schema,
-  rootValue: resolvers,
-  graphiql: true,
-  context: { user: req.user }
-})));
+const getTokenForRequest = async (req) => {
+	console.log('req: ', req);
+	console.log('Context function triggered:', {
+		operationName: req.body.operationName,
+		headers: req.headers,
+		body: req.body,
+	});
+	const operationName = req.body.operationName || 'unknown';
+	if (operationName === 'login' || operationName === 'register') {
+		console.log('Bypassing auth for:', operationName);
+		return { user: null };
+	}
+	const token = req.headers.authorization?.replace('Bearer ', '');
+	if (!token) {
+		console.log('No token provided');
+		throw new Error('Not authenticated');
+	}
+	try {
+		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+		console.log('Decoded JWT:', decoded);
+		const user = await User.findById(decoded.id).populate('business');
+		if (!user) {
+			console.log('User not found for ID:', decoded.id);
+			throw new Error('User not found');
+		}
+		console.log('Authenticated user:', user.username);
+		return { user };
+	} catch (error) {
+		console.error('Auth error:', error.message);
+		throw new Error('Invalid token');
+	}
+};
+
+// Apollo Server
+const server = new ApolloServer({
+	typeDefs,
+	resolvers,
+	csrfPrevention: false,
+	introspection: true,
+	formatError: (error) => {
+		console.error('GraphQL Error:', error);
+		return error;
+	},
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+startStandaloneServer(server, {
+	listen: { port: PORT },
+	context: async ({ req }) => {
+		const {
+			headers,
+			headers: { authorization, operationname: operationName },
+		} = req;
+		if (headers) {
+			console.log('Context function triggered:', {
+				operationName: operationName,
+				headers: headers,
+				body: req.body,
+			});
+			// operationName = operationName || 'unknown'; 
+			console.log('operationName: ', operationName);
+			if (operationName === 'login' || operationName === 'register') {
+				console.log('Bypassing auth for:', operationName);
+				return { user: null };
+			}
+			const token = authorization?.replace('Bearer ', '');
+			if (!token) {
+				console.log('No token provided');
+				throw new Error('Not authenticated');
+			}
+			try {
+				const decoded = jwt.verify(token, process.env.JWT_SECRET);
+				console.log('Decoded JWT:', decoded);
+				const user = await User.findById(decoded.id).populate(
+					'business'
+				);
+				if (!user) {
+					console.log('User not found for ID:', decoded.id);
+					throw new Error('User not found');
+				}
+				console.log('Authenticated user:', user.username);
+				return { user };
+			} catch (error) {
+				console.error('Auth error:', error.message);
+				throw new Error('Invalid token');
+			}
+		}
+	},
+}).then(({ url }) => {
+	console.log(`Server running at ${url}`);
 });

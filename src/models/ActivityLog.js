@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const activityLogSchema = new mongoose.Schema({
   user: {
@@ -23,6 +23,6 @@ const activityLogSchema = new mongoose.Schema({
     default: '',
   },
 });
-module.exports =
-	mongoose.models.ActivityLog || mongoose.model('ActivityLog', activityLogSchema);
-// module.exports = mongoose.model('ActivityLog', activityLogSchema);
+export default mongoose.models.ActivityLog ||
+	mongoose.model('ActivityLog', activityLogSchema);
+// export default mongoose.model('ActivityLog', activityLogSchema);
