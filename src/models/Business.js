@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const businessSchema = new mongoose.Schema({
   bid: { type: Number, required: true, unique: true },
@@ -8,6 +8,6 @@ const businessSchema = new mongoose.Schema({
   type: { type: String, enum: ['store', 'franchise', 'platform'], default: 'store' },
   createdAt: { type: Date, default: Date.now }
 });
-module.exports =
-	mongoose.models.Business || mongoose.model('Business', businessSchema)
-// module.exports = mongoose.model('Business', businessSchema);
+export default mongoose.models.Business ||
+	mongoose.model('Business', businessSchema);
+// export default mongoose.model('Business', businessSchema);
