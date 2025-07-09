@@ -92,7 +92,7 @@ const updateProductStock = async (
 
 const resolvers = {
 	Query: {
-		getUsers: async (_, {first, offset},{user}) => {
+		getUsers: async (_, { first, offset }, { user }) => {
 			console.log('user: ', user);
 			if (!user) throw new Error('Not authenticated');
 			if (user.role !== 'platform') throw new Error('Unauthorized');
@@ -322,7 +322,8 @@ const resolvers = {
 			});
 			return { token, user: newUser };
 		},
-		login: async (_, { username, password }) => {
+		login: async (_, { payload }) => {
+			const { username, password } = payload;
 			const user = await User.findOne({ username }).populate('business');
 			if (!user || !(await bcrypt.compare(password, user.password))) {
 				throw new Error('Invalid credentials');
