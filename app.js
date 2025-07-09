@@ -66,38 +66,33 @@ app.get('/health', (req, res) => {
 	res.status(200).json({ status: 'OK' });
 });
 
-const getTokenForRequest = async (req) => {
-	console.log('req: ', req);
-	console.log('Context function triggered:', {
-		operationName: req.body.operationName,
-		headers: req.headers,
-		body: req.body,
-	});
-	const operationName = req.body.operationName || 'unknown';
-	if (operationName === 'login' || operationName === 'register') {
-		console.log('Bypassing auth for:', operationName);
-		return { user: null };
-	}
-	const token = req.headers.authorization?.replace('Bearer ', '');
-	if (!token) {
-		console.log('No token provided');
-		throw new Error('Not authenticated');
-	}
-	try {
-		const decoded = jwt.verify(token, process.env.JWT_SECRET);
-		console.log('Decoded JWT:', decoded);
-		const user = await User.findById(decoded.id).populate('business');
-		if (!user) {
-			console.log('User not found for ID:', decoded.id);
-			throw new Error('User not found');
-		}
-		console.log('Authenticated user:', user.username);
-		return { user };
-	} catch (error) {
-		console.error('Auth error:', error.message);
-		throw new Error('Invalid token');
-	}
-};
+// const getTokenForRequest = async (req) => {
+// 	console.log('Context function triggered:', {
+// 		operationName: req.body.operationName,
+// 		headers: req.headers,
+// 		body: req.body,
+// 	});
+// 	const operationName = req.body.operationName || 'unknown';
+// 	if (operationName === 'login' || operationName === 'register') {
+// 		return { user: null };
+// 	}
+// 	const token = req.headers.authorization?.replace('Bearer ', '');
+// 	if (!token) {
+// 		throw new Error('Not authenticated');
+// 	}
+// 	try {
+// 		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+// 		const user = await User.findById(decoded.id).populate('business');
+// 		if (!user) {
+// 			throw new Error('User not found');
+// 		}
+
+// 		return { user };
+// 	} catch (error) {
+// 		throw new Error('Invalid token');
+// 	}
+// };
 
 // Apollo Server
 const server = new ApolloServer({
@@ -106,7 +101,6 @@ const server = new ApolloServer({
 	csrfPrevention: false,
 	introspection: true,
 	formatError: (error) => {
-		console.error('GraphQL Error:', error);
 		return error;
 	},
 });
@@ -126,35 +120,29 @@ startStandaloneServer(server, {
 				headers: headers,
 				body: req.body,
 			});
-			// operationName = operationName || 'unknown'; 
-			console.log('operationName: ', operationName);
+			// operationName = operationName || 'unknown';
+
 			if (operationName === 'login' || operationName === 'register') {
-				console.log('Bypassing auth for:', operationName);
 				return { user: null };
 			}
 			const token = authorization?.replace('Bearer ', '');
 			if (!token) {
-				console.log('No token provided');
 				throw new Error('Not authenticated');
 			}
 			try {
 				const decoded = jwt.verify(token, process.env.JWT_SECRET);
-				console.log('Decoded JWT:', decoded);
+
 				const user = await User.findById(decoded.id).populate(
 					'business'
 				);
 				if (!user) {
-					console.log('User not found for ID:', decoded.id);
 					throw new Error('User not found');
 				}
-				console.log('Authenticated user:', user.username);
+
 				return { user };
 			} catch (error) {
-				console.error('Auth error:', error.message);
 				throw new Error('Invalid token');
 			}
 		}
 	},
-}).then(({ url }) => {
-	console.log(`Server running at ${url}`);
-});
+}).then(({ url }) => {});

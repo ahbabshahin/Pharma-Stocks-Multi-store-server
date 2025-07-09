@@ -82,7 +82,6 @@ const typeDefs = gql`
 		hasMore: Boolean!
 	}
 
-
 	type PaginatedBusinesses {
 		body: [Business!]!
 		total: Int!
@@ -119,9 +118,14 @@ const typeDefs = gql`
 		hasMore: Boolean!
 	}
 
-	type AuthPayload {
+	type AuthResponse {
 		token: String!
 		user: User!
+	}
+
+	input AuthPayload {
+		username: String!
+		password: String!
 	}
 
 	type Query {
@@ -159,8 +163,8 @@ const typeDefs = gql`
 			password: String!
 			role: String
 			businessId: ID
-		): AuthPayload!
-		login(username: String!, password: String!): AuthPayload!
+		): AuthResponse!
+		login(payload: AuthPayload): AuthResponse!
 		updateUser(
 			id: ID!
 			username: String
